@@ -215,10 +215,32 @@ class IskurJobBot:
     def _save_seen_jobs(self) -> None:
         """
         Görülen ilan numaralarını kayıt eder.
+
+        ÖNEMLİ (depo şişmesini önler):
+        - ID listesi deterministik olarak SIRALANIR. Python `set` sırası her
+          çalıştırmada farklı olduğu için sıralanmadığında git'te binlerce
+          satırlık sahte fark oluşuyor ve depo gereksiz yere büyüyordu.
+        - İçerik (ilan ID kümesi) değişmediyse dosya hiç yazılmaz; böylece
+          yeni ilan yokken boşuna commit üretilmez.
         """
         try:
+            new_ids = sorted(self.seen_jobs)
+
+            # ID kümesi değişmediyse dosyaya dokunma (gereksiz commit olmasın)
+            if os.path.exists(self.SEEN_JOBS_FILE):
+                try:
+                    with open(self.SEEN_JOBS_FILE, "r", encoding="utf-8") as f:
+                        old_ids = json.load(f).get("seen_ids", [])
+                    if sorted(old_ids) == new_ids:
+                        return
+                except Exception:
+                    pass  # Bozuk/eksik dosya varsa aşağıda yeniden yazılır
+
             with open(self.SEEN_JOBS_FILE, "w", encoding="utf-8") as f:
-                json.dump({"seen_ids": list(self.seen_jobs), "last_update": datetime.now().isoformat()}, f, indent=2)
+                json.dump(
+                    {"seen_ids": new_ids, "last_update": datetime.now().isoformat()},
+                    f, ensure_ascii=False, indent=2
+                )
         except Exception as err:
             logger.error(f"Görülen ilanlar kaydedilirken hata: {err}")
 

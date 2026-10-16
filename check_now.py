@@ -93,9 +93,21 @@ def _git_push_state():
 
         if push.returncode == 0:
             logger.info(f"✅ Durum git'e kaydedildi ve push edildi (dal: {branch}).")
+            return
+
+        # Push reddedildiyse (ör. bu sırada depoya yeni bir kod commit'i
+        # gönderildiyse "non-fast-forward" olur) uzak dalı rebase ile alıp
+        # bir kez daha denenir. Böylece kod güncellemesi durum kaydını kilitlemez.
+        detail = (push.stderr or push.stdout or "").strip().replace("\n", " ")[:300]
+        logger.warning(f"⚠️ İlk push başarısız (kod {push.returncode}): {detail}")
+
+        _run(["git", "pull", "--rebase", "--autostash", "origin", branch])
+        retry = _run(["git", "push", "origin", f"HEAD:{branch}"])
+        if retry.returncode == 0:
+            logger.info(f"✅ Durum git'e kaydedildi (rebase sonrası, dal: {branch}).")
         else:
-            detail = (push.stderr or push.stdout or "").strip().replace("\n", " ")[:400]
-            logger.warning(f"⚠️ Git push başarısız (kod {push.returncode}): {detail}")
+            detail2 = (retry.stderr or retry.stdout or "").strip().replace("\n", " ")[:300]
+            logger.warning(f"⚠️ Git push tekrar başarısız (kod {retry.returncode}): {detail2}")
     except Exception as err:
         logger.warning(f"Git push sırasında hata (görmezden gelinebilir): {err}")
 
