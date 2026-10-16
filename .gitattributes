@@ -1,0 +1,13 @@
+# Bu proje hem Windows'ta (gelistirme) hem Linux sunucuda (7/24 calisma) kullanilir.
+# Kabuk scriptleri ve systemd servis dosyalari Linux'ta MUTLAKA LF satir sonu
+# ile bulunmalidir; aksi halde "bash: bad interpreter" hatasi alinir.
+*.sh        text eol=lf
+*.service   text eol=lf
+Dockerfile  text eol=lf
+*.py        text eol=lf
+
+# Ikili dosyalar
+*.db        binary
+*.png       binary
+*.jpg       binary
+*.ico       binary

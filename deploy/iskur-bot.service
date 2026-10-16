@@ -1,0 +1,32 @@
+[Unit]
+Description=ISKUR & SBB Ilan Takip Telegram Botu (7/24 Kesintisiz)
+Documentation=file:__APP_DIR__/KILAVUZ.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+Group=__RUN_USER__
+WorkingDirectory=__APP_DIR__
+
+# Gizli anahtarlar (token, API key) bu dosyadan ortam degiskeni olarak okunur.
+# Dosya yoksa servis yine de baslar (config_iskur.json kullanilir).
+EnvironmentFile=-/etc/iskur-bot.env
+Environment=PYTHONUNBUFFERED=1
+Environment=TZ=Europe/Istanbul
+
+ExecStart=__APP_DIR__/.venv/bin/python check_now.py --forever
+
+# Cokse bile otomatik yeniden baslat -> 7/24 kesintisizlik
+Restart=always
+RestartSec=10
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=iskur-bot
+
+[Install]
+WantedBy=multi-user.target

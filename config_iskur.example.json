@@ -1,0 +1,20 @@
+{
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+  "admin_chat_id": "",
+  "gemini_api_key": "",
+  "enable_sbb_public_portal": true,
+  "enable_memurlar_portal": false,
+  "enable_kariyer_portal": false,
+  "city_code": "0",
+  "city_name": "Tum Turkiye",
+  "isyeri_turu": "kamu",
+  "keyword": "",
+  "check_interval_seconds": 180,
+  "enable_telegram_notifications": true,
+  "session_cookies": {
+    "ASP.NET_SessionId": "",
+    "iskur_cookie": ""
+  },
+  "selected_cities": []
+}

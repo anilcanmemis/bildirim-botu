@@ -1,0 +1,66 @@
+name: Zamanlanmis Kontrol
+
+# =============================================================================
+#  Public depo oldugu icin GitHub Actions dakikalari SINIRSIZ ve UCRETSIZDIR.
+#  (Private depolarda aylik 2.000 dakika siniri vardi ve 7/24 calisma
+#   bu kotayi ~1,5 gunde tuketiyordu.)
+#
+#  Tum gizli bilgiler (token, API anahtari, filtre ayarlari) GitHub Secrets
+#  icindeki ISKUR_CONFIG degiskeninde tutulur; bu depoda hicbir deger yoktur.
+# =============================================================================
+
+# Ayni anda yalnizca bir instance calisir; yeni tetikleme eskisini iptal eder
+concurrency:
+  group: scheduled-runner
+  cancel-in-progress: true
+
+on:
+  schedule:
+    # Her 6 saatte bir: calisan job yoksa yenisini baslatir.
+    # (Bot 5s50dk calistigi icin normalde job hala aktiftir ve concurrency
+    #  kurali yeni tetiklemeyi iptal eder; yalnizca beklenmedik cokme
+    #  durumunda yeni instance acilir.)
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    # GitHub Actions maksimum job suresi 6 saat; bot 5s50dk ile biraz once kapanir
+    timeout-minutes: 359
+
+    steps:
+      - name: Depoyu klonla
+        uses: actions/checkout@v4
+
+      - name: Python kurulumu
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Bagimliliklari yukle
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ayarlari olustur (Secrets)
+        env:
+          CONFIG_JSON: ${{ secrets.ISKUR_CONFIG }}
+        run: |
+          if [ -z "$CONFIG_JSON" ]; then
+            echo "::error::ISKUR_CONFIG secret'i tanimli degil."
+            echo "Depo ayarlarindan (Settings > Secrets and variables > Actions) ekleyin."
+            exit 1
+          fi
+          printf '%s' "$CONFIG_JSON" > config_iskur.json
+          python -c "import json;d=json.load(open('config_iskur.json',encoding='utf-8'));print('Ayar dosyasi hazir. Anahtar sayisi:',len(d))"
+
+      - name: Botu calistir (~5 saat 50 dakika kesintisiz)
+        run: |
+          git config --global user.name "scheduler"
+          git config --global user.email "scheduler@users.noreply.github.com"
+          python check_now.py

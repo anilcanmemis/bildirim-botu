@@ -1,0 +1,19 @@
+[Unit]
+Description=Oracle Cloud Always Free - Bosta Sayilma (Idle Reclamation) Korumasi
+After=network-online.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+Group=__RUN_USER__
+WorkingDirectory=__APP_DIR__/deploy
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__APP_DIR__/.venv/bin/python __APP_DIR__/deploy/keepalive.py --percent __KEEPALIVE_PERCENT__
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=iskur-keepalive
+
+[Install]
+WantedBy=multi-user.target

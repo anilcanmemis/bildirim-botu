@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+deploy/.env
+scratch/
+.venv/
+venv/
+*.log
+
+# --- Gizli / kisisel veriler: ASLA commit edilmez ---
+# config_iskur.json : bot token, chat ID ve Gemini API anahtari icerir
+# jobs.db           : yetkili kullanici (Telegram ID) tablosunu icerir
+# Bu dosyalar GitHub Secrets'tan ve yerel ortamdan beslenir.
+config_iskur.json
+jobs.db
+*.db
