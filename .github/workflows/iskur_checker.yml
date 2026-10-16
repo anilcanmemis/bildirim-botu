@@ -22,6 +22,11 @@ on:
     #  durumunda yeni instance acilir.)
     - cron: '0 */6 * * *'
   workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Calisma suresi (saniye). Bos birakilirsa ~5s50dk calisir. Test icin 90 yazabilirsiniz.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -59,8 +64,17 @@ jobs:
           printf '%s' "$CONFIG_JSON" > config_iskur.json
           python -c "import json;d=json.load(open('config_iskur.json',encoding='utf-8'));print('Ayar dosyasi hazir. Anahtar sayisi:',len(d))"
 
-      - name: Botu calistir (~5 saat 50 dakika kesintisiz)
+      - name: Botu calistir
+        env:
+          TEST_DURATION: ${{ inputs.duration }}
         run: |
+          echo "HEAD: $(git rev-parse --abbrev-ref HEAD) | dal: ${GITHUB_REF_NAME}"
           git config --global user.name "scheduler"
           git config --global user.email "scheduler@users.noreply.github.com"
-          python check_now.py
+          if [ -n "$TEST_DURATION" ]; then
+            echo "Test modu: ${TEST_DURATION} saniye"
+            python check_now.py --duration "$TEST_DURATION"
+          else
+            echo "Normal mod: ~5 saat 50 dakika kesintisiz"
+            python check_now.py
+          fi

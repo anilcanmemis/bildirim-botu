@@ -14,3 +14,7 @@ venv/
 config_iskur.json
 jobs.db
 *.db
+
+# Gecici dosyalar
+*.zip
+remote_seen.json

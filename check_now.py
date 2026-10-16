@@ -71,28 +71,31 @@ def _git_push_state():
     if not GIT_BACKUP_ENABLED:
         return
 
+    def _run(cmd):
+        return subprocess.run(cmd, check=False, capture_output=True, text=True)
+
     try:
-        subprocess.run(
-            ["git", "config", "--global", "user.name", "GitHub Actions Bot"],
-            check=False, capture_output=True
-        )
-        subprocess.run(
-            ["git", "config", "--global", "user.email", "actions@github.com"],
-            check=False, capture_output=True
-        )
-        subprocess.run(
-            ["git", "add", "seen_jobs.json", "last_update_id.txt"],
-            check=False, capture_output=True
-        )
-        result = subprocess.run(
-            ["git", "commit", "-m", "chore: Otomatik durum kaydı (seen_jobs, db) [skip ci]"],
-            capture_output=True, text=True
-        )
-        if "nothing to commit" in result.stdout or "nothing to commit" in result.stderr:
+        _run(["git", "config", "--global", "user.name", "GitHub Actions Bot"])
+        _run(["git", "config", "--global", "user.email", "actions@github.com"])
+        _run(["git", "add", "seen_jobs.json", "last_update_id.txt"])
+
+        result = _run(["git", "commit", "-m", "chore: durum kaydi [skip ci]"])
+        combined = (result.stdout or "") + (result.stderr or "")
+        if "nothing to commit" in combined or "no changes added" in combined:
             logger.debug("Git: Kaydedilecek değişiklik yok, push atlandı.")
             return
-        subprocess.run(["git", "push"], check=False, capture_output=True)
-        logger.info("✅ Durum başarıyla git'e kaydedildi ve push edildi.")
+
+        # HEAD detached olsa dahi çalışsın diye hedef dal açıkça belirtilir.
+        # (actions/checkout bazı olay tiplerinde detached HEAD bırakır ve
+        #  çıplak `git push` bu durumda hata verir.)
+        branch = os.environ.get("GITHUB_REF_NAME", "main") or "main"
+        push = _run(["git", "push", "origin", f"HEAD:{branch}"])
+
+        if push.returncode == 0:
+            logger.info(f"✅ Durum git'e kaydedildi ve push edildi (dal: {branch}).")
+        else:
+            detail = (push.stderr or push.stdout or "").strip().replace("\n", " ")[:400]
+            logger.warning(f"⚠️ Git push başarısız (kod {push.returncode}): {detail}")
     except Exception as err:
         logger.warning(f"Git push sırasında hata (görmezden gelinebilir): {err}")
 
