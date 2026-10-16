@@ -144,10 +144,34 @@ class IskurScraper:
             return all_results
 
         # Tekil il kodu belirleme
+        # NOT: İŞKUR formunda ctlIl='' değeri "--Tüm İller--" anlamına gelir.
         target_code = city_code
         if city_codes and len(city_codes) == 1:
             target_code = "" if city_codes[0] == "0" else city_codes[0]
 
+        # ÖNEMLİ: İŞKUR formunda yalnızca iki radyo seçeneği vardır:
+        #   ozelSektorRadio (Özel Sektör) ve kamuRadio (Kamu).
+        # "Tümü" diye bir radyo YOKTUR. Bu yüzden "tumu" seçildiğinde iki ayrı
+        # arama yapılır ve sonuçlar ilan numarasına göre tekilleştirilerek birleştirilir.
+        if isyeri_turu.lower() in ("tumu", "tümü", "all"):
+            merged: List[Dict[str, Any]] = []
+            seen_no = set()
+            for tur in ("kamu", "ozel"):
+                for item in self._search_single(target_code, tur, keyword):
+                    j_no = item.get("job_no")
+                    if j_no and j_no not in seen_no:
+                        seen_no.add(j_no)
+                        merged.append(item)
+            logger.info(f"'Tümü' kapsamı için kamu + özel sektör birleştirildi: {len(merged)} ilan.")
+            return merged
+
+        return self._search_single(target_code, isyeri_turu, keyword)
+
+    def _search_single(self, target_code: str, isyeri_turu: str, keyword: str) -> List[Dict[str, Any]]:
+        """
+        Tek bir işyeri türü (kamu veya özel) için arama yapar.
+        search_jobs() tarafından çağrılır.
+        """
         # Eğer ViewState henüz çekilmediyse oturumu başlat
         if not self._viewstate:
             if not self.initialize_session():
@@ -155,7 +179,7 @@ class IskurScraper:
 
         # İşyeri Türü Radio Buton seçimi
         radio_value = "kamuRadio"
-        if isyeri_turu.lower() == "ozel" or isyeri_turu.lower() == "özel":
+        if isyeri_turu.lower() in ("ozel", "özel"):
             radio_value = "ozelSektorRadio"
 
         # ASP.NET Postback veri paketi (Form verisi)

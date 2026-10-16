@@ -516,6 +516,23 @@ class IskurJobBot:
                 )
                 self.send_telegram_message(summary_msg)
             else:
+                # Çok sayıda yeni ilan varsa (ör. kapsam değişikliği sonrası ilk tarama)
+                # hepsini tek bir özet mesajda göster. Aksi halde ilk 10 ilan için
+                # ayrı ayrı (Gemini AI analizli) bildirim gönderilir.
+                if len(new_jobs) > 10:
+                    digest = ["🗂️ <b>Toplu Yeni İlan Özeti</b>",
+                              f"Toplam <b>{len(new_jobs)}</b> yeni ilan bulundu.\n"]
+                    for idx, j in enumerate(new_jobs[:40], start=1):
+                        digest.append(
+                            f"{idx}. <b>{j.get('title', '')}</b>\n"
+                            f"   📍 {j.get('location', '')} | ⏳ {j.get('deadline', '')}\n"
+                            f"   🔗 {j.get('detail_url', '')}"
+                        )
+                    if len(new_jobs) > 40:
+                        digest.append(f"\n… ve {len(new_jobs) - 40} ilan daha.")
+                    digest.append("\n⬇️ En güncel 10 ilan için ayrıntılı AI analizi aşağıda:")
+                    self.send_telegram_message("\n".join(digest))
+
                 for job in new_jobs[:10]:
                     try:
                         self._send_job_notification(job)
