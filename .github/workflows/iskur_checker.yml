@@ -64,23 +64,6 @@ jobs:
           printf '%s' "$CONFIG_JSON" > config_iskur.json
           python -c "import json;d=json.load(open('config_iskur.json',encoding='utf-8'));print('Ayar dosyasi hazir. Anahtar sayisi:',len(d))"
 
-      - name: Kaynak erisim teshisi
-        run: |
-          echo "=== SUNUCU CIKIS IP ==="
-          curl -s https://api.ipify.org || true
-          echo
-          echo "=== SBB PORTALI ==="
-          curl -s -o /tmp/sbb.html -w "HTTP=%{http_code} | boyut=%{size_download}\n" \
-            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-            -H "Accept-Language: tr-TR,tr;q=0.9" -H "Referer: https://kamuilan.sbb.gov.tr/" \
-            "https://kamuilan.sbb.gov.tr/" || true
-          echo "--- yanit govdesi (ilk 300 karakter) ---"
-          head -c 300 /tmp/sbb.html 2>/dev/null || echo "(govde yok)"
-          echo
-          echo "=== ISKUR ==="
-          curl -s -o /dev/null -w "HTTP=%{http_code}\n" \
-            "https://esube.iskur.gov.tr/Istihdam/AcikIsIlanAra.aspx" || true
-
       - name: Botu calistir
         env:
           TEST_DURATION: ${{ inputs.duration }}

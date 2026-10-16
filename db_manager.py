@@ -166,7 +166,9 @@ class DBManager:
                     VALUES (?, ?, ?, ?)
                 """, (str(telegram_id), name, role, datetime.now().isoformat()))
                 conn.commit()
-            logger.info(f"Kullanıcı eklendi: {name} (ID: {telegram_id}, Rol: {role})")
+            # Gizlilik: Telegram ID loglarda maskelenir (public repolarda loglar herkese acik)
+            masked_id = f"***{str(telegram_id)[-3:]}" if telegram_id else "***"
+            logger.info(f"Kullanıcı eklendi: {name} (ID: {masked_id}, Rol: {role})")
             return True
         except Exception as err:
             logger.error(f"Kullanıcı eklenirken hata ({telegram_id}): {err}")
